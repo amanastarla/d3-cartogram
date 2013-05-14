@@ -42,10 +42,11 @@
       }
 
       #map-container {
-        height: 600px;
+        height: 650px;
         text-align: center;
         position: relative;
-        margin: 20px 0;
+        /*margin: 20px 0;*/
+
       }
 
       #map {
@@ -53,8 +54,9 @@
         position: absolute;
         background: #fff;
         width: 100%;
-        height: 100%;
+         height: 600px;
         margin: 0;
+        padding:20px;
       }
 
       path.state {
@@ -81,6 +83,7 @@
         left: 0;
         top: 0;
       }
+     
 
     </style><link rel="stylesheet" href="gh-fork-ribbon.css" />
   </head>
@@ -127,12 +130,11 @@ var fmt = d3.format(".2f");
             return function(n) { return fmt(n) + "%"; };
           })(),
           fields = [
-              // {name: "(no scale)", id: "none"},
             {name: "Population", id: "pop"},
             //{name: "Households", id: "hh"},
             {name: "Employment", id: "emp"}
           ],
-          years = [/*2000,*/2010,/*2017,2020,2025,2030,*/2035],
+          years = [2000,2010/*,2017*/,2020,2025/*,2030,2035*/],
           fieldsById = d3.nest()
             .key(function(d) { return d.id; })
             .rollup(function(d) { return d[0]; })
@@ -246,7 +248,7 @@ var fmt = d3.format(".2f");
 
         states.select("title")
           .text(function(d) {
-            return d.properties.name;
+            return d.properties.NAME;
           });
       }
 
@@ -256,7 +258,6 @@ var fmt = d3.format(".2f");
 
         var key = field.id,
             value = function(d) {
-                if(key==='none'){return}
             if(d.id){
              return +dataById[d.id][key][startyear];
             }else{
@@ -296,7 +297,7 @@ var fmt = d3.format(".2f");
         states.data(features)
           .select("title")
             .text(function(d) {
-              return [dataById[d.id].name, fmt(value(d))].join(": ");
+              return [d.properties.NAME, fmt(value(d))].join(": ");
             });
 
         states.transition()
@@ -336,25 +337,7 @@ var fmt = d3.format(".2f");
 
         field = fieldsById[desiredFieldId] || fields[0];
         startyear = (years.indexOf(desiredStartYear) > -1) ? desiredStartYear : years[0];
-if (field.id === "none") {
 
-           yearStart.attr("disabled", "disabled");
-          reset();
-
-        }  else {
-
-          if (field.years) {
-            if (field.years.indexOf(year) === -1) {
-              startyear = field.years[0];
-            }
-            yearStart.selectAll("option")
-              .attr("disabled", function(y) {
-                return (field.years.indexOf(y) === -1) ? "disabled" : null;
-              });
-          } else {
-            yearStart.selectAll("option")
-              .attr("disabled", null);
-          }}
         fieldSelect.property("selectedIndex", fields.indexOf(field));
         yearStart.property("selectedIndex", years.indexOf(startyear));
           deferredUpdate();
@@ -366,8 +349,7 @@ if (field.id === "none") {
         
       }
 
-    </script>
-    <script>
+    </script><script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)

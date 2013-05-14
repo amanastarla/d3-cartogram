@@ -54,7 +54,7 @@
       topology = copy(topology);
 
       // objects are projected into screen coordinates
-      var projectGeometry = projector(projection);
+
 
       // project the arcs into screen space
       var tf = transformer(topology.transform),
@@ -82,19 +82,19 @@
           });
 
       var values = objects.qMap(value),
-          totalValue = values.reduce(function(a,b){return a + b;});
+          totalValue = values.reduce(function(a,b){return a + b;})/2;
       // no iterations; just return the features
       if (iterations <= 0) {
         return objects;
       }
 
       var i = 0,
-          targetSizeError = 1;
+          targetSizeError = 0.20;
       while (i++ < iterations) {
-        var areas = objects.map(path.area),
+        var areas = objects.qMap(path.area),
             totalArea = sum(areas),
             sizeErrors = [],
-            meta = objects.map(function(o, j) {
+            meta = objects.qMap(function(o, j) {
               var area = Math.abs(areas[j]), // XXX: why do we have negative areas?
                   v = +values[j],
                   desired = totalArea * v / totalValue,
@@ -122,10 +122,10 @@
         // console.log("  total area:", totalArea);
         // console.log("  force reduction factor:", forceReductionFactor, "mean error:", sizeError);
 
-        projectedArcs.forEach(function(arc) {
-          arc.forEach(function(coord) {
+        projectedArcs.each(function(arc) {
+          arc.each(function(coord) {
             // create an array of vectors: [x, y]
-            var vectors = meta.map(function(d) {
+            var vectors = meta.qMap(function(d) {
               var centroid =  d.centroid,
                   mass =      d.mass,
                   radius =    d.radius,
@@ -168,7 +168,7 @@
       };
     }
 
-    var iterations = 8,
+    var iterations = 2,
         properties = function(id) {
           return {};
         },
