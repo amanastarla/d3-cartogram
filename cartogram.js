@@ -82,7 +82,7 @@
           });
 
       var values = objects.qMap(value),
-          totalValue = values.reduce(function(a,b){return a + b;})/2;
+          totalValue = values.reduce(function(a,b){return a + b;});
       // no iterations; just return the features
       if (iterations <= 0) {
         return objects;
@@ -168,7 +168,7 @@
       };
     }
 
-    var iterations = 2,
+    var iterations = 8,
         properties = function(id) {
           return {};
         },
