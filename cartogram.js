@@ -28,27 +28,7 @@
    */
    
   d3.cartogram = function() {
-/*
-   NEVER DO THIS!!!!!!!!!!!!!!!!!!!!!!!
-   */
-   Array.prototype.qMap = function(fun) {
-      var len = this.length;
-      var out = new Array(len);
-      var i = 0;
-      while (i < len) {
-        out[i] = fun(this[i], i, this);
-        i++;
-      }
-      return out;
-    }
-    Array.prototype.each=function(fun){
-        var len = this.length;
-        var i = 0;
-      while (i < len) {
-        fun(this[i], i, this);
-        i++;
-      }
-    }
+
     function carto(topology, geometries) {
       // copy it first
       topology = copy(topology);
@@ -58,9 +38,9 @@
 
       // project the arcs into screen space
       var tf = transformer(topology.transform),
-          projectedArcs = topology.arcs.qMap(function(arc) {
+          projectedArcs = topology.arcs.map(function(arc) {
             var x = 0, y = 0;
-            return arc.qMap(function(coord) {
+            return arc.map(function(coord) {
               coord[0] = (x += coord[0]);
               coord[1] = (y += coord[1]);
               return tf(coord);
@@ -72,7 +52,7 @@
         .projection(null);
 
       var objects = object(projectedArcs, {type: "GeometryCollection", geometries: geometries})
-          .geometries.qMap(function(geom) {
+          .geometries.map(function(geom) {
             return {
               type: "Feature",
               id: geom.properties.id,
@@ -81,7 +61,7 @@
             };
           });
 
-      var values = objects.qMap(value),
+      var values = objects.map(value),
           totalValue = values.reduce(function(a,b){return a + b;});
       // no iterations; just return the features
       if (iterations <= 0) {
@@ -91,10 +71,10 @@
       var i = 0,
           targetSizeError = 0.20;
       while (i++ < iterations) {
-        var areas = objects.qMap(path.area),
+        var areas = objects.map(path.area),
             totalArea = sum(areas),
             sizeErrors = [],
-            meta = objects.qMap(function(o, j) {
+            meta = objects.map(function(o, j) {
               var area = Math.abs(areas[j]), // XXX: why do we have negative areas?
                   v = +values[j],
                   desired = totalArea * v / totalValue,
@@ -122,10 +102,10 @@
         // console.log("  total area:", totalArea);
         // console.log("  force reduction factor:", forceReductionFactor, "mean error:", sizeError);
 
-        projectedArcs.each(function(arc) {
-          arc.each(function(coord) {
+        projectedArcs.forEach(function(arc) {
+          arc.forEach(function(coord) {
             // create an array of vectors: [x, y]
-            var vectors = meta.qMap(function(d) {
+            var vectors = meta.map(function(d) {
               var centroid =  d.centroid,
                   mass =      d.mass,
                   radius =    d.radius,
@@ -220,7 +200,7 @@
     };
 
     carto.features = function(topo, geometries) {
-      return geometries.qMap(function(f) {
+      return geometries.map(function(f) {
         return carto.feature(topo, f);
       });
     };
@@ -268,16 +248,16 @@
     var types = {
       Point: proj,
       LineString: function(coords) {
-        return coords.qMap(proj);
+        return coords.map(proj);
       },
       MultiLineString: function(arcs) {
-        return arcs.qMap(types.LineString);
+        return arcs.map(types.LineString);
       },
       Polygon: function(rings) {
-        return rings.qMap(types.LineString);
+        return rings.map(types.LineString);
       },
       MultiPolygon: function(rings) {
-        return rings.qMap(types.Polygon);
+        return rings.map(types.Polygon);
       }
     };
     return function(geom) {
@@ -287,7 +267,7 @@
 
   function copy(o) {
     return (o instanceof Array)
-      ? o.qMap(copy)
+      ? o.map(copy)
       : (typeof o === "string" || typeof o === "number")
         ? o
         : copyObject(o);
@@ -324,7 +304,7 @@ function sum(numbers) {
     }
 
     function polygon(arcs) {
-      return arcs.qMap(line);
+      return arcs.map(line);
     }
 
     function geometry(o) {
@@ -337,11 +317,11 @@ function sum(numbers) {
       LineString: line,
       MultiLineString: polygon,
       Polygon: polygon,
-      MultiPolygon: function(arcs) { return arcs.qMap(polygon); }
+      MultiPolygon: function(arcs) { return arcs.map(polygon); }
     };
 
     return o.type === "GeometryCollection"
-        ? (o = Object.create(o), o.geometries = o.geometries.qMap(geometry), o)
+        ? (o = Object.create(o), o.geometries = o.geometries.map(geometry), o)
         : geometry(o);
   }
 
