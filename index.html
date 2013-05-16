@@ -183,7 +183,6 @@ var fmt = d3.format(",.2f"),
           geometries,
           dataById=[],
           carto = d3.cartogram()
-            .projection(null)
             .properties(function(d) {
               return dataById[d.properties.id];
             })

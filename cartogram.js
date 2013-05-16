@@ -26,7 +26,23 @@
    *      .attr("d", cartogram.path);
    * });
    */
-   
+var cosArctan = function(dx,dy){
+       var div = dx/dy;
+       if(dy>0){
+           return 1/Math.sqrt(1+(div*div));
+       }else{
+           return (-1/Math.sqrt(1+(div*div)));
+       }
+       
+   };
+var sinArctan = function(dx,dy){
+       var div = dx/dy;
+       if(dy>0){
+       return div/Math.sqrt(1+(div*div));
+       }else{
+           return (-div/Math.sqrt(1+(div*div)));
+       }
+   }
   d3.cartogram = function() {
 
     function carto(topology, geometries, cb) {
@@ -71,9 +87,9 @@
       var i = 0;
       while (i++ < iterations) {
         var areas = objects.map(path.area);
-        console.log(areas);
             var totalArea = sum(areas),
-            sizeErrors = [],
+            sizeErrorsTot =0,
+            sizeErrorsNum=0,
             meta = objects.map(function(o, j) {
               var area = Math.abs(areas[j]), // XXX: why do we have negative areas?
                   v = +values[j],
@@ -81,7 +97,8 @@
                   radius = Math.sqrt(area / Math.PI),
                   mass = Math.sqrt(desired / Math.PI) - radius,
                   sizeError = Math.max(area, desired) / Math.min(area, desired);
-              sizeErrors.push(sizeError);
+              sizeErrorsTot+=sizeError;
+              sizeErrorsNum++
               // console.log(o.id, "@", j, "area:", area, "value:", v, "->", desired, radius, mass, sizeError);
               return {
                 id:         o.id,
@@ -95,7 +112,7 @@
               };
             });
 
-        var sizeError = mean(sizeErrors),
+        var sizeError = sizeErrorsTot/sizeErrorsNum,
             forceReductionFactor = 1 / (1 + sizeError);
 
         // console.log("meta:", meta);
@@ -114,7 +131,6 @@
                   rSquared = (radius*radius),
                   dx = projectedArcs[i2][i1][0] - centroid[0],
                     dy = projectedArcs[i2][i1][1] - centroid[1],
-                  theta =     Math.atan2(dy,dx),
                   distSquared = dx * dx + dy * dy,
                   dist=Math.sqrt(distSquared),
                   Fij = (dist > radius)
@@ -123,8 +139,8 @@
                       (distSquared / rSquared) *
                       (4 - 3 * dist / radius);
               return [
-                a[0]+(Fij * Math.cos(theta)),
-                a[1]+(Fij * Math.sin(theta))
+                a[0]+(Fij * cosArctan(dy,dx)),
+                a[1]+(Fij * sinArctan(dy,dx))
               ];
             },[0,0]);
 
@@ -175,14 +191,6 @@
       }
     };
 
-    carto.projection = function(p) {
-      if (arguments.length) {
-        projection = p;
-        return carto;
-      } else {
-        return projection;
-      }
-    };
 
     carto.feature = function(topology, geom) {
       return {
