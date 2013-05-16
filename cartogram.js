@@ -26,23 +26,26 @@
    *      .attr("d", cartogram.path);
    * });
    */
-var cosArctan = function(dx,dy){
-       var div = dx/dy;
-       if(dy>0){
-           return 1/Math.sqrt(1+(div*div));
-       }else{
-           return (-1/Math.sqrt(1+(div*div)));
-       }
-       
-   };
-var sinArctan = function(dx,dy){
-       var div = dx/dy;
-       if(dy>0){
-       return div/Math.sqrt(1+(div*div));
-       }else{
-           return (-div/Math.sqrt(1+(div*div)));
-       }
-   }
+function quickSqrt(a){
+    var buf = new ArrayBuffer(Float32Array.BYTES_PER_ELEMENT);
+var fv = new Float32Array(buf);
+var lv = new Uint32Array(buf);
+    fv.set([a]);
+    lv.set([(1 << 29) + (lv[0] >> 1) - (1 << 22) -0x4C000]);
+    return fv[0];
+}
+function babylonian(n){
+			var x = n * 0.25;
+			var a;
+			do
+			{
+				x = 0.5 * (x + n / x);
+				a = x * x - n;
+				if (a < 0) a = -a;
+			}
+			while (a > 0.0001)
+			return x;
+}
   d3.cartogram = function() {
 
     function carto(topology, geometries, cb) {
@@ -118,36 +121,40 @@ var sinArctan = function(dx,dy){
         // console.log("meta:", meta);
         // console.log("  total area:", totalArea);
         // console.log("  force reduction factor:", forceReductionFactor, "mean error:", sizeError);
-        var len1,i1,delta,len2=projectedArcs.length,i2=0;
+        var len1,i1,delta,len2=projectedArcs.length,i2=0,delta,len3,i3,centroid,mass,radius,rSquared,dx,dy,distSquared,dist,Fij;
         while(i2<len2){
             len1=projectedArcs[i2].length;
             i1=0;
           while(i1<len1){
             // create an array of vectors: [x, y]
-            delta = meta.reduce(function(a,d) {
-              var centroid =  d.centroid,
-                  mass =      d.mass,
-                  radius =    d.radius,
-                  rSquared = (radius*radius),
-                  dx = projectedArcs[i2][i1][0] - centroid[0],
-                    dy = projectedArcs[i2][i1][1] - centroid[1],
-                  distSquared = dx * dx + dy * dy,
-                  dist=Math.sqrt(distSquared),
+            delta = [0,0];
+            len3 = meta.length;
+            i3=0;
+            while(i3<len3) {
+              centroid =  meta[i3].centroid;
+                  mass =      meta[i3].mass;
+                  radius =    meta[i3].radius;
+                  rSquared = (radius*radius);
+                  dx = projectedArcs[i2][i1][0] - centroid[0];
+                    dy = projectedArcs[i2][i1][1] - centroid[1];
+                  distSquared = dx * dx + dy * dy;
+                  dist=Math.sqrt(distSquared);
                   Fij = (dist > radius)
                     ? mass * radius / dist
                     : mass *
                       (distSquared / rSquared) *
                       (4 - 3 * dist / radius);
-              return [
-                a[0]+(Fij * cosArctan(dy,dx)),
-                a[1]+(Fij * sinArctan(dy,dx))
-              ];
-            },[0,0]);
+              
+                delta[0]+=(Fij * cosArctan(dy,dx));
+                delta[1]+=(Fij * sinArctan(dy,dx));
+              
+              i3++;
+            }
 
             // using Fij and angles, calculate vector sum
             
 
-            projectedArcs[i2][i1][0] += (delta[0]*forceReductionFactor)
+            projectedArcs[i2][i1][0] += (delta[0]*forceReductionFactor);
             projectedArcs[i2][i1][1] += (delta[1]*forceReductionFactor);
           i1++;
           };
@@ -269,7 +276,23 @@ var sinArctan = function(dx,dy){
       return types[geom.type](geom.coordinates);
     };
   }
-
+function cosArctan(dx,dy){
+       var div = dx/dy;
+       if(dy>0){
+           return 1/Math.sqrt(1+(div*div));
+       }else{
+           return (-1/Math.sqrt(1+(div*div)));
+       }
+       
+   };
+function sinArctan(dx,dy){
+       var div = dx/dy;
+       if(dy>0){
+       return div/Math.sqrt(1+(div*div));
+       }else{
+           return (-div/Math.sqrt(1+(div*div)));
+       }
+   }
   function copy(o) {
     return (o instanceof Array)
       ? o.map(copy)
