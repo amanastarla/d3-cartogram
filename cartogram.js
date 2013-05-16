@@ -29,7 +29,7 @@
    
   d3.cartogram = function() {
 
-    function carto(topology, geometries) {
+    function carto(topology, geometries, cb) {
       // copy it first
       topology = copy(topology);
 
@@ -65,14 +65,14 @@
           totalValue = values.reduce(function(a,b){return a + b;});
       // no iterations; just return the features
       if (iterations <= 0) {
-        return objects;
+        return cb(objects);
       }
 
-      var i = 0,
-          targetSizeError = 0.20;
+      var i = 0;
       while (i++ < iterations) {
-        var areas = objects.map(path.area),
-            totalArea = sum(areas),
+        var areas = objects.map(path.area);
+        console.log(areas);
+            var totalArea = sum(areas),
             sizeErrors = [],
             meta = objects.map(function(o, j) {
               var area = Math.abs(areas[j]), // XXX: why do we have negative areas?
@@ -101,20 +101,26 @@
         // console.log("meta:", meta);
         // console.log("  total area:", totalArea);
         // console.log("  force reduction factor:", forceReductionFactor, "mean error:", sizeError);
-
-        projectedArcs.forEach(function(arc) {
-          arc.forEach(function(coord) {
+        var len1,i1,delta,len2=projectedArcs.length,i2=0;
+        while(i2<len2){
+            len1=projectedArcs[i2].length;
+            i1=0;
+          while(i1<len1){
             // create an array of vectors: [x, y]
-            var delta = meta.reduce(function(a,d) {
+            delta = meta.reduce(function(a,d) {
               var centroid =  d.centroid,
                   mass =      d.mass,
                   radius =    d.radius,
-                  theta =     angle(centroid, coord),
-                  dist =      distance(centroid, coord),
+                  rSquared = (radius*radius),
+                  dx = projectedArcs[i2][i1][0] - centroid[0],
+                    dy = projectedArcs[i2][i1][1] - centroid[1],
+                  theta =     Math.atan2(dy,dx),
+                  distSquared = dx * dx + dy * dy,
+                  dist=Math.sqrt(distSquared),
                   Fij = (dist > radius)
                     ? mass * radius / dist
                     : mass *
-                      (Math.pow(dist, 2) / Math.pow(radius, 2)) *
+                      (distSquared / rSquared) *
                       (4 - 3 * dist / radius);
               return [
                 a[0]+(Fij * Math.cos(theta)),
@@ -125,22 +131,18 @@
             // using Fij and angles, calculate vector sum
             
 
-            delta[0] *= forceReductionFactor;
-            delta[1] *= forceReductionFactor;
-
-            coord[0] += delta[0];
-            coord[1] += delta[1];
-          });
-        });
+            projectedArcs[i2][i1][0] += (delta[0]*forceReductionFactor)
+            projectedArcs[i2][i1][1] += (delta[1]*forceReductionFactor);
+          i1++;
+          };
+          i2++;
+        };
 
         // break if we hit the target size error
-        if (sizeError <= targetSizeError) break;
+        if (sizeError <= 0.20) break;
       }
 
-      return {
-        features: objects,
-        arcs: projectedArcs
-      };
+      cb(objects);
     }
 
     var iterations = 8,
@@ -233,9 +235,9 @@
       return Math.atan2(b[1] - a[1], b[0] - a[0]);
   }
 
-  function distance(a, b) {
-    var dx = b[0] - a[0],
-        dy = b[1] - a[1];
+  function distance(centroid, coord) {
+    var dx = coord[0] - centroid[0],
+        dy = coord[1] - centroid[1];
     return Math.sqrt(dx * dx + dy * dy);
   }
 

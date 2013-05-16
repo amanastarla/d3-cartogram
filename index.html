@@ -122,19 +122,13 @@
       if (!document.createElementNS) {
         document.getElementsByTagName("form")[0].style.display = "none";
       }
-var fmt = d3.format(".2f");
-      // field definitions from:
-      // <http://www.census.gov/popest/data/national/totals/2011/files/NST-EST2011-alldata.pdf>
-      var percent = (function() {
-            
-            return function(n) { return fmt(n) + "%"; };
-          })(),
+var fmt = d3.format(",.2f"),
           fields = [
             {name: "Population", id: "pop"},
-            //{name: "Households", id: "hh"},
+            {name: "Households", id: "hh"},
             {name: "Employment", id: "emp"}
           ],
-          years = [2000,2010/*,2017*/,2020,2025/*,2030,2035*/],
+          years = [2000,2010,2017,2020,2025,2030,2035],
           fieldsById = d3.nest()
             .key(function(d) { return d.id; })
             .rollup(function(d) { return d[0]; })
@@ -291,13 +285,13 @@ var fmt = d3.format(".2f");
         });
 
         // generate the new features, pre-projected
-        var features = carto(topology, geometries).features;
+        carto(topology, geometries, function(features){
 
         // update the data
         states.data(features)
           .select("title")
             .text(function(d) {
-              return [d.properties.NAME, fmt(value(d))].join(": ");
+              return [dataById[d.id].name, fmt(value(d))].join(": ");
             });
 
         states.transition()
@@ -311,6 +305,7 @@ var fmt = d3.format(".2f");
         var delta = (Date.now() - start) / 1000;
         stat.text(["calculated in", delta.toFixed(1), "seconds"].join(" "));
         body.classed("updating", false);
+        });
       }
 
       var deferredUpdate = (function() {
