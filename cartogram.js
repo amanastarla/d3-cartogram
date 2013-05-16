@@ -56,15 +56,23 @@ function babylonian(n){
 
 
       // project the arcs into screen space
-      var tf = transformer(topology.transform),
-          projectedArcs = topology.arcs.map(function(arc) {
-            var x = 0, y = 0;
-            return arc.map(function(coord) {
-              coord[0] = (x += coord[0]);
-              coord[1] = (y += coord[1]);
-              return tf(coord);
-            });
-          });
+      var tf = transformer(topology.transform),x,y,len1,i1,out1,len2=topology.arcs.length,i2=0,
+          projectedArcs = new Array(len2);
+          while(i2<len2){
+            x = 0;
+            y = 0;
+            len1 = topology.arcs[i2].length;
+            i1 = 0;
+            out1 = new Array(len1);
+            while(i1<len1){
+              topology.arcs[i2][i1][0] = (x += topology.arcs[i2][i1][0]);
+              topology.arcs[i2][i1][1] = (y += topology.arcs[i2][i1][1]);
+              out1[i1] = tf(topology.arcs[i2][i1]);
+              i1++;
+            }
+            projectedArcs[i2++]=out1;
+            
+          }
 
       // path with identity projection
       var path = d3.geo.path()
@@ -294,16 +302,40 @@ function sinArctan(dx,dy){
        }
    }
   function copy(o) {
-    return (o instanceof Array)
-      ? o.map(copy)
-      : (typeof o === "string" || typeof o === "number")
-        ? o
-        : copyObject(o);
+    if (o instanceof Array){
+      return copyArray(o);
+    }else if(typeof o === "string" || typeof o === "number"){
+        return o;
+    }else{
+        return copyObject(o);
+    }
   }
-  
+  function copyArray(o){
+      var len = o.length;
+      var out = new Array(len);
+      var i = 0;
+      while(i<len){
+        if (o[i] instanceof Array){
+            out[i] = copyArray(o[i]);
+        }else if(typeof o[i] === "string" || typeof o[i] === "number"){
+            out[i] =  o[i];
+        }else{
+            out[i] =  copyObject(o[i]);
+        }
+          i++;
+      }
+      return out;
+  }
   function copyObject(o) {
     var obj = {};
-    for (var k in o) obj[k] = copy(o[k]);
+    for (var k in o) 
+    if (o[k] instanceof Array){
+            obj[k] = copyArray(o[k]);
+        }else if(typeof o[k] === "string" || typeof o[k] === "number"){
+            obj[k] =  o[k];
+        }else{
+            obj[k] =  copyObject(o[k]);
+        }
     return obj;
   }
 function sum(numbers) {
