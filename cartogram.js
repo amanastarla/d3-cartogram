@@ -105,7 +105,7 @@
         projectedArcs.forEach(function(arc) {
           arc.forEach(function(coord) {
             // create an array of vectors: [x, y]
-            var vectors = meta.map(function(d) {
+            var delta = meta.reduce(function(a,d) {
               var centroid =  d.centroid,
                   mass =      d.mass,
                   radius =    d.radius,
@@ -117,18 +117,13 @@
                       (Math.pow(dist, 2) / Math.pow(radius, 2)) *
                       (4 - 3 * dist / radius);
               return [
-                Fij * Math.cos(theta),
-                Fij * Math.sin(theta)
+                a[0]+(Fij * Math.cos(theta)),
+                a[1]+(Fij * Math.sin(theta))
               ];
-            });
+            },[0,0]);
 
             // using Fij and angles, calculate vector sum
-            var delta = vectors.reduce(function(a, b) {
-              return [
-                a[0] + b[0],
-                a[1] + b[1]
-              ];
-            }, [0, 0]);
+            
 
             delta[0] *= forceReductionFactor;
             delta[1] *= forceReductionFactor;
